@@ -1,0 +1,219 @@
+import React, { useState, useMemo } from 'react';
+
+// Data manually extracted and updated from various ACHE chapter websites
+// and filtered for events occurring August 2025 or later.
+const eventsData = [
+    // Kentucky Chapter Events
+    {
+        date: "2025-08-20",
+        time: "5:00 PM to 12:00 PM",
+        chapter: "ACHE Kentucky Chapter",
+        title: "2025 Mid-South Critical Access & Rural Hospital Conference",
+        location: "The Seelbach Hilton Louisville. 500 S 4th Street. Louisville, KY 40202",
+        speakers: ["Speakers: TBD"],
+        credits: "3.0 hours of ACHE In-Person Credit",
+        eventUrl: "https://kyache.org/meetinginfo.php?id=55&ts=1749763436",
+        registrationInfo: "Registration details not yet available. Check the event website for updates."
+    },
+    // Chicago Health Executives Forum Events
+    {
+        date: "2025-08-07",
+        time: "7:00 PM to 10:00 PM",
+        chapter: "Chicago Health Executives Forum",
+        title: "CHEF Early Careerist Committee Summer Networking Event",
+        location: "Howl at the Moon. 26 W Hubbard St. Chicago, IL 60654",
+        speakers: ["Networking Event - No formal speakers"],
+        credits: "N/A",
+        eventUrl: "https://chefchicago.org/meetinginfo.php?id=55&ts=1752093666",
+        registrationInfo: "Registration is open. See the event website to register."
+    },
+    {
+        date: "2025-09-11",
+        time: "5:30 PM to 8:00 PM",
+        chapter: "Chicago Health Executives Forum",
+        title: "Disruptive Innovation in Healthcare Delivery",
+        location: "Walsh Group. 929 W. Adams St. Chicago, IL 60607",
+        speakers: ["Speakers: TBD"],
+        credits: "1.5 Hours of ACHE In-Person Education Credit!",
+        eventUrl: "https://chefchicago.org/meetinginfo.php?id=50&ts=1749774541",
+        registrationInfo: "Registration is available via the event website."
+    },
+    {
+        date: "2025-09-25",
+        time: "All Day Event",
+        chapter: "Chicago Health Executives Forum",
+        title: "IHA Leadership Summit",
+        location: "Hilton Chicago/Oak Brook Hills Resort & Conference Center. 3500 Midwest Road. Oak Brook, IL 60523",
+        speakers: ["Amy Walter", "Katherine Meese, PhD", "Justin Wren", "Craig Deao"],
+        credits: "N/A",
+        eventUrl: "https://team-iha.org/education-and-events/calendar-of-events/2025-iha-leadership-summit-september-25-26/",
+        registrationInfo: "Registration is available via the event website."
+    },
+    // ACHE - Wisconsin Chapter Events
+    {
+        date: "2025-08-26",
+        time: "4:00 pm - 7:00 pm",
+        chapter: "ACHE - Wisconsin Chapter",
+        title: "Local Program and Mix & Mingle at PRA (Milwaukee)",
+        location: "Plunkett Raysich Architects, 209 S Water St. Milwaukee, WI 53204",
+        speakers: ["Industry Experts to be announced"],
+        credits: "N/A",
+        eventUrl: "https://wisconsin.ache.org/event/local-program-and-mix-mingle-at-pra-milwaukee/",
+        registrationInfo: "This event is open to all members and non-members. Registration is required."
+    },
+    {
+        date: "2025-09-22",
+        time: "11:00 am - 2:30 pm (multi-day event)",
+        chapter: "ACHE - Wisconsin Chapter",
+        title: "ACHE-WI 2025 Annual Conference",
+        location: "Chula Vista Resort, 1000 Chula Vista Pkwy. Wisconsin Dells, WI 53965",
+        speakers: ["Keynote: Dr. Nicole Eull", "Additional speakers TBD"],
+        credits: "A full compliment of credits will be offered.",
+        eventUrl: "https://wisconsin.ache.org/event/ache-wi-2025-annual-conference/",
+        registrationInfo: "Register by August 15, 2025 for a $25 early bird discount. Room block available at a special rate."
+    },
+    {
+        date: "2025-11-07",
+        time: "8:00 am - 4:30 pm",
+        chapter: "ACHE - Wisconsin Chapter",
+        title: "Wisconsin HFMA 2025 Women in Healthcare Leadership Conference",
+        location: "Milwaukee Marriott West, W231N1600 Corporate Ct. Waukesha, WI 53186",
+        speakers: ["Speakers: TBD"],
+        credits: "N/A",
+        eventUrl: "https://wisconsin.ache.org/event/wisconsin-hfma-2025-women-in-healthcare-leadership-conference/",
+        registrationInfo: "Registration details not yet available. Check the event website for updates."
+    }
+].sort((a, b) => new Date(a.date) - new Date(b.date));
+
+
+// Helper to format date for display
+const formatDate = (dateString) => {
+    const options = { year: 'numeric', month: 'long', day: 'numeric' };
+    return new Date(dateString.replace(/-/g, '\/')).toLocaleDateString('en-US', options);
+};
+
+// --- Gemini AI Integration ---
+const AiModal = ({ title, content, isLoading, onClose }) => {
+    const [copySuccess, setCopySuccess] = useState('');
+    const handleCopy = () => {
+        const textArea = document.createElement("textarea");
+        textArea.value = content;
+        document.body.appendChild(textArea);
+        textArea.select();
+        try {
+            document.execCommand('copy');
+            setCopySuccess('Copied!');
+            setTimeout(() => setCopySuccess(''), 2000);
+        } catch (err) {
+            setCopySuccess('Failed to copy');
+        }
+        document.body.removeChild(textArea);
+    };
+    return (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center p-4">
+            <div className="bg-white rounded-lg shadow-2xl max-w-2xl w-full transform transition-all duration-300 ease-out scale-95 hover:scale-100">
+                <div className="p-6">
+                    <div className="flex justify-between items-start"><h3 className="text-2xl font-bold text-gray-900">{title}</h3><button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors"><svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg></button></div>
+                    <div className="mt-4 bg-gray-50 rounded-lg p-4 min-h-[200px] max-h-[60vh] overflow-y-auto whitespace-pre-wrap font-mono text-sm text-gray-800">{isLoading ? <div className="flex justify-center items-center h-full"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div></div> : content}</div>
+                    <p className="text-xs text-gray-500 mt-2 text-center">✨ Content generated by Gemini. Please review before use.</p>
+                </div>
+                <div className="bg-gray-50 px-6 py-4 rounded-b-lg flex justify-end items-center space-x-4">
+                    {copySuccess && <span className="text-sm text-green-600">{copySuccess}</span>}
+                    <button onClick={handleCopy} disabled={isLoading} className="px-4 py-2 bg-indigo-600 text-white font-semibold rounded-lg shadow-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:bg-gray-400 transition-all">Copy Text</button>
+                    <button onClick={onClose} className="px-4 py-2 bg-white text-gray-700 font-semibold border border-gray-300 rounded-lg shadow-sm hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-300 transition-all">Close</button>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+
+// EventCard component with new AI feature buttons and detailed info
+const EventCard = ({ event, onGenerate }) => (
+    <div className="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-2xl transition-shadow duration-300 ease-in-out flex flex-col h-full">
+        <div className="p-6 flex-grow">
+            <div className="tracking-wide text-sm text-indigo-600 font-semibold">{event.chapter}</div>
+            <h2 className="block mt-1 text-xl leading-tight font-bold text-gray-900">{event.title}</h2>
+            
+            {/* Event Details */}
+            <div className="mt-4 space-y-3 text-gray-700">
+                <div className="flex items-center"><svg className="h-5 w-5 text-gray-500 mr-3 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm6 12a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" /></svg><span className="font-medium">{formatDate(event.date)}</span></div>
+                <div className="flex items-center"><svg className="h-5 w-5 text-gray-500 mr-3 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.414-1.414L11 9.586V6z" clipRule="evenodd" /></svg><span>{event.time}</span></div>
+                <div className="flex items-start"><svg className="h-5 w-5 text-gray-500 mr-3 flex-shrink-0 mt-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" /></svg><span>{event.location}</span></div>
+            </div>
+
+            {/* Speakers and Credits */}
+            <div className="mt-4 pt-4 border-t border-gray-200 space-y-3">
+                 <div className="flex items-start"><svg className="h-5 w-5 text-gray-500 mr-3 flex-shrink-0 mt-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M7 8a3 3 0 100-6 3 3 0 000 6zM14.5 9a3.5 3.5 0 100-7 3.5 3.5 0 000 7zM11.5 1h-8A2.5 2.5 0 001 3.5V12h13V3.5A2.5 2.5 0 0011.5 1zM1 14.5A2.5 2.5 0 003.5 17h10a2.5 2.5 0 002.5-2.5V14H1v.5z" /></svg><div><h4 className="font-semibold text-sm text-gray-800">Speakers</h4><p className="text-sm text-gray-600">{event.speakers.join(', ')}</p></div></div>
+                 <div className="flex items-start"><svg className="h-5 w-5 text-green-500 mr-3 flex-shrink-0 mt-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" /></svg><div><h4 className="font-semibold text-sm text-gray-800">Credits</h4><p className="text-sm text-gray-600">{event.credits}</p></div></div>
+            </div>
+             {/* Registration Info */}
+            <div className="mt-4 pt-4 border-t border-gray-200">
+                 <div className="flex items-start"><svg className="h-5 w-5 text-gray-500 mr-3 flex-shrink-0 mt-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z" /></svg><div><h4 className="font-semibold text-sm text-gray-800">Registration</h4><p className="text-sm text-gray-600">{event.registrationInfo}</p></div></div>
+                 <a href={event.eventUrl} target="_blank" rel="noopener noreferrer" className="mt-3 inline-flex items-center text-indigo-600 hover:text-indigo-800 font-semibold text-sm">Visit Event Website <svg className="ml-1 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg></a>
+            </div>
+        </div>
+        <div className="p-4 bg-gray-50 border-t">
+            <div className="flex flex-col sm:flex-row gap-2">
+                <button onClick={() => onGenerate('points', event)} className="w-full text-sm px-3 py-2 bg-indigo-100 text-indigo-800 font-semibold rounded-lg hover:bg-indigo-200 transition-all">✨ Generate Talking Points</button>
+                <button onClick={() => onGenerate('email', event)} className="w-full text-sm px-3 py-2 bg-indigo-100 text-indigo-800 font-semibold rounded-lg hover:bg-indigo-200 transition-all">✨ Draft Invite Email</button>
+            </div>
+        </div>
+    </div>
+);
+
+// Main App component
+export default function App() {
+    const [selectedChapter, setSelectedChapter] = useState('All');
+    const [modalState, setModalState] = useState({ isOpen: false, title: '', content: '', isLoading: false });
+
+    // Function to call Gemini API
+    const callGeminiAPI = async (prompt) => {
+        setModalState(prev => ({ ...prev, isLoading: true }));
+        const apiKey = ""; // Canvas will provide the key
+        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+        const payload = { contents: [{ role: "user", parts: [{ text: prompt }] }] };
+        try {
+            const response = await fetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+            if (!response.ok) { throw new Error(`API Error: ${response.statusText}`); }
+            const result = await response.json();
+            if (result.candidates && result.candidates.length > 0) {
+                const text = result.candidates[0].content.parts[0].text;
+                setModalState(prev => ({ ...prev, content: text, isLoading: false }));
+            } else { throw new Error("No content received from API."); }
+        } catch (error) {
+            console.error("Gemini API call failed:", error);
+            setModalState(prev => ({ ...prev, content: `Error: Could not generate content. ${error.message}`, isLoading: false }));
+        }
+    };
+
+    // Handler for generating AI content
+    const handleGenerate = (type, event) => {
+        let prompt = '';
+        let title = '';
+        if (type === 'points') {
+            title = 'Talking Points';
+            prompt = `You are a helpful assistant for a busy healthcare executive. For the event titled "${event.title}" hosted by the ${event.chapter}, please generate 3-5 insightful talking points or icebreakers. These should be relevant for networking with other professionals in the healthcare administration field. Focus on topics like innovation, leadership, current challenges, and collaboration. Format the output as a bulleted list.`;
+        } else if (type === 'email') {
+            title = 'Draft Invitation Email';
+            prompt = `You are a helpful assistant for a busy healthcare executive. Draft a professional, friendly, and concise email to a colleague inviting them to the event: "${event.title}".\n\nEvent Details:\n- Date: ${formatDate(event.date)}\n- Hosted by: ${event.chapter}\n\nThe email should express interest in attending together to network and learn. Keep it brief and to the point. Sign off with "[Your Name]".`;
+        }
+        setModalState({ isOpen: true, title, content: '', isLoading: true });
+        callGeminiAPI(prompt);
+    };
+
+    const chapters = useMemo(() => ['All', ...Array.from(new Set(eventsData.map(e => e.chapter))).sort()], []);
+    const filteredEvents = useMemo(() => selectedChapter === 'All' ? eventsData : eventsData.filter(e => e.chapter === selectedChapter), [selectedChapter]);
+
+    return (
+        <div className="bg-gray-50 min-h-screen font-sans">
+            {modalState.isOpen && <AiModal {...modalState} onClose={() => setModalState({ isOpen: false, title: '', content: '', isLoading: false })} />}
+            <div className="container mx-auto p-4 sm:p-6 lg:p-8">
+                <header className="text-center mb-10"><h1 className="text-4xl sm:text-5xl font-extrabold text-gray-900 tracking-tight">ACHE Chapter Events</h1><p className="text-lg text-gray-600 mt-3 max-w-2xl mx-auto">Upcoming local events from ACHE Chapters (August 2025 onwards)</p></header>
+                <div className="mb-8 flex justify-center"><div className="w-full max-w-sm"><label htmlFor="chapter-select" className="block text-sm font-medium text-gray-700 mb-2 sr-only">Filter by Chapter:</label><select id="chapter-select" value={selectedChapter} onChange={(e) => setSelectedChapter(e.target.value)} className="block w-full pl-3 pr-10 py-2.5 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-lg shadow-sm">{chapters.map(chapter => (<option key={chapter} value={chapter}>{chapter}</option>))}</select></div></div>
+                {filteredEvents.length > 0 ? (<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">{filteredEvents.map((event, index) => (<EventCard key={`${event.title}-${index}`} event={event} onGenerate={handleGenerate} />))}</div>) : (<div className="text-center py-16 px-4"><svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true"><path vectorEffect="non-scaling-stroke" strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 13h6m-3-3v6m-9 1V7a2 2 0 012-2h14a2 2 0 012 2v10a2 2 0 01-2 2H4a2 2 0 01-2-2z" /></svg><h3 className="mt-2 text-lg font-medium text-gray-900">No Events Found</h3><p className="mt-1 text-sm text-gray-500">No upcoming events match the selected chapter. Try selecting "All".</p></div>)}
+                <footer className="text-center mt-16 text-sm text-gray-500"><p>Data manually sourced from individual ACHE chapter websites. This is a demonstration app.</p></footer>
+            </div>
+        </div>
+    );
+}
